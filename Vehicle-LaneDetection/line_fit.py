@@ -413,10 +413,10 @@ class LineFit:
 		# Annotate lane curvature values and vehicle offset from center
 		avg_curve = (left_curve + right_curve)/2
 		label_str = 'Radius of curvature: %.1f m' % avg_curve
-		result = cv2.putText(result, label_str, (0,20), 0, .5, (0,0,0), 1, cv2.LINE_AA)
+		result = cv2.putText(result, label_str, (0, self.height - 5), 0, .5, (255,255,255), 1, cv2.LINE_AA)
 
 		label_str = 'Vehicle offset from lane center: %.1f m' % vehicle_offset
-		result = cv2.putText(result, label_str, (0,40), 0, .5, (0,0,0), 1, cv2.LINE_AA)
+		result = cv2.putText(result, label_str, (0, self.height - 25), 0, .5, (255,255,255), 1, cv2.LINE_AA)
 
 		return result
 
@@ -450,7 +450,7 @@ class LineFit:
 		except Exception as e:
 			print(e)
 
-		return img
+		return img, vehicle_offset
 
 # if __name__ == '__main__':
 # 	#img_file = 'test_images/test5.jpg'

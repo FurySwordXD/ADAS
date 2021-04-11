@@ -4,23 +4,19 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-[System.Serializable]
-public class VehicleType
-{
-    public GameObject vehicle;
-    public string type;
-}
-
 public class Vehicle : MonoBehaviour
 {
-    public VehicleType[] vehicleTypes;
-
     public int id;    
     public string type;
     public float speed = 0f;
     
     public Text speedText;
+
+    public GameObject brakes;
     // Start is called before the first frame update
+
+    private Queue<float> speedWindow = new Queue<float>();
+
     void Start()
     {
         
@@ -31,39 +27,31 @@ public class Vehicle : MonoBehaviour
     {        
     }    
 
-    
-    private GameObject FindVehicleByType(string type)
+
+    void CalculateSpeed(float baseSpeed)
     {
-        foreach (VehicleType vtype in vehicleTypes)
+        float speedSum = 0;
+        foreach (float s in speedWindow)
         {
-            if (vtype.type.Equals(type))
-                return vtype.vehicle;
+            speedSum += s;
         }
+        speed = speedSum / speedWindow.Count;
+        speedText.text = (Mathf.Round(speed).ToString() + " km/h");
 
-        return vehicleTypes[0].vehicle;
-    }
-
-    public static Vehicle SpawnVehicle(int id, GameObject spawnedVehiclePrefab, Vector3 spawnLocation, string type = "")
-    {
-        GameObject spawnedVehicle = Instantiate(spawnedVehiclePrefab, spawnLocation, Quaternion.identity) as GameObject;
-
-        Vehicle vehicleScript = spawnedVehicle.GetComponent<Vehicle>();
-
-        GameObject vehiclePrefab = vehicleScript.FindVehicleByType(type);        
-        GameObject newVehicle = Instantiate(vehiclePrefab, Vector3.zero, Quaternion.identity) as GameObject;        
-        newVehicle.transform.SetParent(vehicleScript.transform);
-        newVehicle.transform.localPosition = Vector3.zero;
-
-        vehicleScript.id = id;
-        vehicleScript.type = type;
-        return vehicleScript;
+        brakes.SetActive(speed < -5f);
     }
 
     public void UpdateParameters(float baseSpeed, Vector3 location)
     {
-        speed = baseSpeed + ( (location.z - transform.position.z)  / Time.deltaTime / 10f );
-        speedText.text = (Mathf.Round(speed).ToString() + " km/h");
-        transform.position = Vector3.Lerp(transform.position, location, 1f * Time.deltaTime);
+        float newSpeed = ( (location.z - transform.position.z)  / Time.deltaTime / 10f );
+
+        speedWindow.Enqueue(newSpeed);        
+        while (speedWindow.Count > Math.Round(1 / Time.deltaTime))
+            speedWindow.Dequeue();
+
+        CalculateSpeed(baseSpeed);
+        
+        transform.position = Vector3.Lerp(transform.position, location, 5f * Time.deltaTime);
     }
 
     public void Destroy()

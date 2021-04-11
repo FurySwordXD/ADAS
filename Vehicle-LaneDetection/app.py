@@ -35,7 +35,7 @@ class ADAS:
         self.mot_tracker = Sort()
 
         self.width = 960
-        self.height = 540
+        self.height = 480
         self.height_offset = 200
 
         src = np.float32([[0, self.height], [self.width, self.height ], [self.width, 0], [0, 0]])
@@ -88,12 +88,15 @@ class ADAS:
                 x1, y1, x2, y2, obj_id, label_index = int(x1), int(y1), int(x2), int(y2), int(obj_id), int(label_index)
                 center_x, center_y = int((x1 + x2) / 2), int(y2)
 
+                if abs(x1 - x2) < self.width / 30 or abs(y2 - y1) < self.height / 30:
+                    continue
+
                 color = tuple([int(i) for i in self.yolo.colors[0]])
 
                 cv2.circle(image, (center_x, y2), 3, (255, 100, 100), -1)
                 cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)                        
                 cv2.putText(image, f"{self.yolo.labels[label_index]} {obj_id}", (x1, y1 + 10), cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 255, 255), 1)
-                
+                                
                 self.detected_objects.append({
                     'id': obj_id,
                     'class_label': self.yolo.labels[label_index],
@@ -168,12 +171,14 @@ class ADAS:
 
     
     def inference(self, image):
-        #image = self.lane_lines.lane_detect(image)
+        image, vehicle_offset = self.lane_lines.lane_detect(image)
         image = self.image_detect(image)
         #image = self.lane_lines.lane_detect(image)
-        
-        display = cv2.resize(image, (640, 360-120))
-        cv2.imshow("Result", display)
+        self.display(image)
+
+    def display(self, image):
+        #display = cv2.resize(image, (640, 360-120))
+        cv2.imshow("Result", image)
         #cv2.imshow('Display', canny)
 
 
@@ -184,10 +189,13 @@ adas = ADAS()
 while True:	
     start = time.time()
     x_offset = 0
-    y_offset = 180
-    image = grab_screen((x_offset, y_offset, x_offset + adas.width, y_offset + adas.height))    
+    y_offset = 250
+    image = grab_screen((x_offset, y_offset, x_offset + adas.width, y_offset + adas.height))
+    #image = cv2.resize(image, (288, 288))
     adas.inference(image)
+    
     #print(f"FPS: {str( 1 / (time.time() - start) )}")
+
     if cv2.waitKey(1) & 0xFF == ord("x"):
         cv2.destroyAllWindows()
         break

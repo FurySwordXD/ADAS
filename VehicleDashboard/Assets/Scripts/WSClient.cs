@@ -19,12 +19,28 @@ public class JSONRoot
     public DetectedObject[] objects;    
 }
 
+
+[System.Serializable]
+public class VehicleType
+{
+    public GameObject vehicle;
+    public string type;
+}
+
+
 public class WSClient : MonoBehaviour
 {    
+    public VehicleType[] vehicleTypes;
+
     public Camera camera;
 
     public float xCorrection = 1f;
     public float yCorrection = 1f;
+
+    public float xFinalCorrection = 1f;
+    public float yFinalCorrection = 1f;
+
+
     public float speed = 20f;
 
     //List<GameObject> spawnedVehicles = new List<GameObject>();
@@ -66,6 +82,17 @@ public class WSClient : MonoBehaviour
     float ConvertRange(float value, float oldMin, float oldMax, float minValue, float maxValue)
     {
         return ( (value - oldMin) / (oldMax - oldMin) ) * (maxValue - minValue) + minValue;
+    }
+        
+    GameObject FindVehicleByType(string type)
+    {
+        foreach (VehicleType vtype in vehicleTypes)
+        {
+            if (vtype.type.Equals(type))
+                return vtype.vehicle;
+        }
+
+        return vehicleTypes[0].vehicle;
     }
 
     void Update()
@@ -113,7 +140,7 @@ public class WSClient : MonoBehaviour
                 if (spawnedVehicles.ContainsKey(o.id))
                 {
                     Vehicle spawnedVehicle = spawnedVehicles[o.id];                    
-                    spawnedVehicle.UpdateParameters(0f, location);
+                    spawnedVehicle.UpdateParameters(speed, location);
                 }
                 else
                     SpawnVehicle(o.id, location, o.class_label);
@@ -140,7 +167,7 @@ public class WSClient : MonoBehaviour
         RaycastHit hit;
         if (Physics.Raycast(ray, out hit, distance)) {
             Debug.DrawLine(ray.origin, hit.point, Color.red);
-            return new Vector3(hit.point.x, 0.5f, hit.point.z);
+            return new Vector3(hit.point.x * xFinalCorrection, 0.5f, hit.point.z * yFinalCorrection);
         }
         else
         {
@@ -156,8 +183,16 @@ public class WSClient : MonoBehaviour
         if (spawnLocation.magnitude > 0f)
         {            
             // // Vehicle newVehicle = new Vehicle();
-            Vehicle newVehicle = Vehicle.SpawnVehicle(id, spawnedVehiclePrefab, spawnLocation, type);
-            spawnedVehicles.Add(id, newVehicle);
-        }                    
+            //Vehicle newVehicle = Vehicle.SpawnVehicle(id, spawnedVehiclePrefab, spawnLocation, type);
+            
+            GameObject vehiclePrefab = FindVehicleByType(type);
+
+            GameObject spawnedVehicle = Instantiate(vehiclePrefab, spawnLocation, Quaternion.identity) as GameObject;
+
+            Vehicle vehicleScript = spawnedVehicle.GetComponent<Vehicle>();                                    
+            vehicleScript.id = id;            
+
+            spawnedVehicles.Add(id, vehicleScript);
+        }
     }
 }

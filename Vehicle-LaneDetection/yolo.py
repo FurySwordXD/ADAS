@@ -11,7 +11,7 @@ import os
 
 class cv_Yolo:
 
-    def __init__(self, yolo_path, confidence=0.0, threshold=0.3):
+    def __init__(self, yolo_path, confidence=0.0, threshold=.4):
         self.confidence = confidence
         self.threshold = threshold
 
