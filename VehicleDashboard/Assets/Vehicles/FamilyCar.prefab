@@ -329,6 +329,7 @@ MonoBehaviour:
   speed: 0
   speedText: {fileID: 6795145502650446028}
   brakes: {fileID: 440381764775722475}
+  easeType: 7
 --- !u!1 &4904663612741828276
 GameObject:
   m_ObjectHideFlags: 0

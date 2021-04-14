@@ -16,9 +16,9 @@ public class DetectedObject
 [System.Serializable]
 public class JSONRoot
 {
-    public DetectedObject[] objects;    
+    public DetectedObject[] objects;
+    public float vehicle_offset;
 }
-
 
 [System.Serializable]
 public class VehicleType
@@ -32,7 +32,7 @@ public class WSClient : MonoBehaviour
 {    
     public VehicleType[] vehicleTypes;
 
-    public Camera camera;
+    public Camera fovCamera;
 
     public float xCorrection = 1f;
     public float yCorrection = 1f;
@@ -42,18 +42,19 @@ public class WSClient : MonoBehaviour
 
 
     public float speed = 20f;
-
+    
+        
+    WebSocket ws;    
+    JSONRoot jsonData;
     //List<GameObject> spawnedVehicles = new List<GameObject>();
     public GameObject spawnedVehiclePrefab;
-    public Dictionary <int, Vehicle> spawnedVehicles = new Dictionary<int, Vehicle>();
+    public Dictionary <int, Vehicle> spawnedVehicles = new Dictionary<int, Vehicle>();    
 
-    DetectedObject[] detectedObjects = new DetectedObject[0];
+    public SteeringWheel steeringWheel;
 
-    WebSocket ws;
 
     void Start()
-    {
-        Debug.Log("Start");
+    {        
         ws = new WebSocket("ws://localhost:8080");
         ws.Connect();
         ws.OnMessage += (sender, e) => {
@@ -74,9 +75,9 @@ public class WSClient : MonoBehaviour
 
     void ParseData(string data)
     {
-        JSONRoot root = JsonUtility.FromJson<JSONRoot>(data);
-        Debug.Log(root.objects.Length);
-        detectedObjects = root.objects;
+        jsonData = JsonUtility.FromJson<JSONRoot>(data);
+        
+        steeringWheel.UpdateParameters(jsonData.vehicle_offset);
     }
 
     float ConvertRange(float value, float oldMin, float oldMax, float minValue, float maxValue)
@@ -102,14 +103,16 @@ public class WSClient : MonoBehaviour
 
         // string test = "{\"objects\":[{\"class_label\":\"car\",\"center_x\":0.6125,\"center_y\":0.8111111111111111}]}";
         // ParseData(test);
-        
+        if (jsonData == null)
+            return;
+
         List<int> keys = new List<int>(spawnedVehicles.Keys);
 
         for (int key_idx = 0; key_idx < keys.Count; key_idx++) {
             int key = keys[key_idx];
             bool found = false;
-            for (int i = 0; i < detectedObjects.Length; i++) {
-                if (detectedObjects[i].id == key)
+            for (int i = 0; i < jsonData.objects.Length; i++) {
+                if (jsonData.objects[i].id == key)
                 {
                     found = true;
                     break;
@@ -123,17 +126,13 @@ public class WSClient : MonoBehaviour
             }                
         }
 
-        for (int i = 0; i < detectedObjects.Length; i++)
+        for (int i = 0; i < jsonData.objects.Length; i++)
         {            
             try
             {
-                DetectedObject o = detectedObjects[i];
-                //float x = o.center_x * camera.pixelWidth * ((1 - o.center_y) < 0.3f ? 1.25f * (o.center_x > .5f ? 1f : -1f) : 1f);
-                //float x = o.center_x * camera.pixelWidth * xCorrection;                
-                float x = ConvertRange(ConvertRange(o.center_x, 0, 1, -1, 1) * xCorrection, -1, 1, 0, 1) * camera.pixelWidth;                
-                //x += (Mathf.Pow(1 / (1 - Mathf.Abs(.5f - o.center_x)), 2) * xCorrection);
-                float y = (1 - o.center_y) * camera.pixelHeight * yCorrection;
-                //float y = ConvertRange(ConvertRange(1 - o.center_y, 0, 1, -1, 1) * yCorrection, -1, 1, 0, 1) * camera.pixelHeight;
+                DetectedObject o = jsonData.objects[i];
+                float x = ConvertRange(ConvertRange(o.center_x, 0, 1, -1, 1) * xCorrection, -1, 1, 0, 1) * fovCamera.pixelWidth;                                
+                float y = (1 - o.center_y) * fovCamera.pixelHeight * yCorrection;                
                 
                 Vector3 location = Get3DLocation(x, y);
 
@@ -149,21 +148,19 @@ public class WSClient : MonoBehaviour
             {
                 Debug.Log(e);
             }
-        }
+        }        
     }
 
     void DebugSpawn()
     {  
         Vector3 spawnLocation = Get3DLocation(Input.mousePosition.x, Input.mousePosition.y);            
-        SpawnVehicle(0, spawnLocation, "car");
-        //Ray ray = camera.ScreenPointToRay(new Vector3(.868f * camera.pixelWidth, (1f - .907f) * camera.pixelHeight, camera.nearClipPlane));       
-        
+        SpawnVehicle(0, spawnLocation, "car");            
     }
 
     Vector3 Get3DLocation(float x, float y)
     {
         float distance = 100f;
-        Ray ray = camera.ScreenPointToRay(new Vector3(x, y, camera.nearClipPlane));        
+        Ray ray = fovCamera.ScreenPointToRay(new Vector3(x, y, fovCamera.nearClipPlane));        
         RaycastHit hit;
         if (Physics.Raycast(ray, out hit, distance)) {
             Debug.DrawLine(ray.origin, hit.point, Color.red);
@@ -172,8 +169,7 @@ public class WSClient : MonoBehaviour
         else
         {
             Debug.DrawLine(ray.origin, ray.origin + ray.direction * distance, Color.red);
-            Vector3 rayEnd = ray.origin + ray.direction * distance;
-            //return new Vector3(rayEnd.x, 0.5f, rayEnd.z);            
+            Vector3 rayEnd = ray.origin + ray.direction * distance;                       
             return Vector3.zero;
         }            
     }

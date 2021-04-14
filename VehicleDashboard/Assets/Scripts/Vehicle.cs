@@ -15,6 +15,10 @@ public class Vehicle : MonoBehaviour
     public GameObject brakes;
     // Start is called before the first frame update
 
+    public LeanTweenType easeType = LeanTweenType.easeInOutCubic;
+
+    Vector3 location = Vector3.zero;
+
     private Queue<float> speedWindow = new Queue<float>();
 
     void Start()
@@ -24,7 +28,8 @@ public class Vehicle : MonoBehaviour
 
     // Update is called once per frame
     void Update()
-    {        
+    {   
+ 
     }    
 
 
@@ -51,7 +56,11 @@ public class Vehicle : MonoBehaviour
 
         CalculateSpeed(baseSpeed);
         
-        transform.position = Vector3.Lerp(transform.position, location, 5f * Time.deltaTime);
+        //transform.position = Vector3.Lerp(transform.position, location, 5f * Time.deltaTime);        
+        //LeanTween.cancel(gameObject);
+        LeanTween.move(gameObject, location, 1f).setEase(easeType);
+        this.location = location;
+        
     }
 
     public void Destroy()

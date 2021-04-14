@@ -31,8 +31,12 @@ class LineFit:
 		# src = np.float32([[200, 720], [1100, 720], [595, 450], [685, 450]])
 		# dst = np.float32([[300, 720], [980, 720], [300, 0], [980, 0]])
 
-		src = np.float32([[int(width * .156), height], 	[int(width * .859), height], 	[int(width * .465), int(height * .625)], 	[int(width * .535), int(height * .625)]])
+		# src = np.float32([[int(width * .1), height], 	[int(width * .9), height], 	[int(width * .35), int(height * .3)], 	[int(width * .65), int(height * .3)]])
+		# dst = np.float32([[int(width * .2), height], 	[int(width * .8), height], [int(width * .2), 0], 					[int(width * .8), 0]])
+
+		src = np.float32([[int(width * .156), height], 	[int(width * .859), height], 	[int(width * .465), int(height * .325)], 	[int(width * .535), int(height * .325)]])
 		dst = np.float32([[int(width * .234), height], 	[int(width * .765), height], 	[int(width * .234), 0], 					[int(width * .765), 0]])
+
 
 		m = cv2.getPerspectiveTransform(src, dst)
 		m_inv = cv2.getPerspectiveTransform(dst, src)
@@ -120,9 +124,9 @@ class LineFit:
 
 
 	def combined_thresh(self, img):
-		abs_bin = self.abs_sobel_thresh(img, orient='x', thresh_min=50, thresh_max=255)
-		mag_bin = self.mag_thresh(img, sobel_kernel=3, mag_thresh=(50, 255))
-		dir_bin = self.dir_threshold(img, sobel_kernel=15, thresh=(0.7, 1.3))
+		abs_bin = self.abs_sobel_thresh(img, orient='x', thresh_min=10, thresh_max=255)
+		mag_bin = self.mag_thresh(img, sobel_kernel=3, mag_thresh=(10, 255))
+		dir_bin = self.dir_threshold(img, sobel_kernel=15, thresh=(.7, 1.3))
 		hls_bin = self.hls_thresh(img, thresh=(170, 255))
 
 		combined = np.zeros_like(dir_bin)
@@ -427,10 +431,12 @@ class LineFit:
 			
 			img, abs_bin, mag_bin, dir_bin, hls_bin = self.combined_thresh(undist)
 			#cv2.imshow('lanes', img)
+			#return img, 0
 
 			# # Perspective transform
-			img, binary_unwarped, m, m_inv = self.perspective_transform(img)
-			#cv2.imshow('lanes', img)		
+			img, binary_unwarped, m, m_inv = self.perspective_transform(img)			
+
+			#cv2.imshow('lanesP', img)		
 
 			# Polynomial fit
 			ret = self.line_fit(img)
@@ -445,12 +451,12 @@ class LineFit:
 
 			vehicle_offset = self.calc_vehicle_offset(undist, left_fit, right_fit)
 
-			img = self.final_viz(undist, left_fit, right_fit, m_inv, left_curve, right_curve, vehicle_offset)
+			img = self.final_viz(undist, left_fit, right_fit, m_inv, left_curve, right_curve, vehicle_offset)			
+			return img, vehicle_offset
 
 		except Exception as e:
 			print(e)
-
-		return img, vehicle_offset
+			return img, 0.0
 
 # if __name__ == '__main__':
 # 	#img_file = 'test_images/test5.jpg'

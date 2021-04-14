@@ -10,9 +10,14 @@ wss.on('connection', function connection(ws) {
 
 	pythonProcess.stdout.on('data', (data) => {
 		// Do something with the data returned from python script
-		data = JSON.parse(data.toString());
-		ws.send(JSON.stringify(data));
-		console.log("Data: ", data);
+		try{
+			data = JSON.parse(data.toString());
+			ws.send(JSON.stringify(data));
+			console.log("Data: ", data);
+		}		
+		catch (err) {
+			console.log(err);
+		}
 	});
 
 	ws.on('message', (data) => {

@@ -53,7 +53,10 @@ class ADAS:
         self.projection_matrix = cv2.getPerspectiveTransform(src, dst) # The transformation matrix
         self.projection_matrix_inverse = cv2.getPerspectiveTransform(dst, src)
 
-        self.lane_lines = LineFit(self.width, self.height)
+        self.lane_lines = LineFit(self.width, self.height - self.height_offset)
+
+        self.detected_objects = []
+        self.vehicle_offset = 0.0
 
     def load_image(self, img_path):
         # image loading
@@ -102,9 +105,7 @@ class ADAS:
                     'class_label': self.yolo.labels[label_index],
                     'center_x': center_x / self.width,
                     'center_y': center_y / (self.height - self.height_offset),
-                })
-            
-            print(json.dumps({'objects': self.detected_objects}), flush=True)
+                })                        
 
         
 
@@ -137,7 +138,7 @@ class ADAS:
                 
         #image = cv2.resize(frame, (480, 480), interpolation=cv2.INTER_LINEAR)
         self.detected_objects = []        
-        image = image[self.height_offset:(self.height_offset+self.height), 0:self.width] # ROI Crop        
+        #image = image[self.height_offset:(self.height_offset+self.height), 0:self.width] # ROI Crop        
 
         detections = self.yolo.detect(image)           
         self.draw_box_labes(image, detections) #{'left': roi_left, 'center': roi_center, 'right': roi_right}         
@@ -171,13 +172,19 @@ class ADAS:
 
     
     def inference(self, image):
-        image, vehicle_offset = self.lane_lines.lane_detect(image)
+        #image = cv2.resize(image, (1280, 720))
+        image = image[self.height_offset:(self.height_offset+self.height), 0:self.width]        
+        image, self.vehicle_offset = self.lane_lines.lane_detect(image)
+
         image = self.image_detect(image)
         #image = self.lane_lines.lane_detect(image)
+
+        print(json.dumps({'objects': self.detected_objects, 'vehicle_offset': self.vehicle_offset}), flush=True)
+
         self.display(image)
 
     def display(self, image):
-        #display = cv2.resize(image, (640, 360-120))
+        #image = cv2.resize(image, (640, 360 - ))
         cv2.imshow("Result", image)
         #cv2.imshow('Display', canny)
 
@@ -187,15 +194,20 @@ class ADAS:
 adas = ADAS()
 
 while True:	
-    start = time.time()
-    x_offset = 0
-    y_offset = 250
-    image = grab_screen((x_offset, y_offset, x_offset + adas.width, y_offset + adas.height))
-    #image = cv2.resize(image, (288, 288))
-    adas.inference(image)
-    
-    #print(f"FPS: {str( 1 / (time.time() - start) )}")
 
-    if cv2.waitKey(1) & 0xFF == ord("x"):
+    try:
+        start = time.time()
+        x_offset = 0
+        y_offset = 250
+        image = grab_screen((x_offset, y_offset, x_offset + adas.width, y_offset + adas.height))
+        #image = cv2.resize(image, (288, 288))
+        adas.inference(image)
+        
+        #print(f"FPS: {str( 1 / (time.time() - start) )}")
+
+        if cv2.waitKey(1) & 0xFF == ord("x"):
+            cv2.destroyAllWindows()
+            break
+    except KeyboardInterrupt:
         cv2.destroyAllWindows()
         break
