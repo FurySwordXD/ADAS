@@ -57,8 +57,8 @@ public class Vehicle : MonoBehaviour
         CalculateSpeed(baseSpeed);
         
         //transform.position = Vector3.Lerp(transform.position, location, 5f * Time.deltaTime);        
-        //LeanTween.cancel(gameObject);
-        LeanTween.move(gameObject, location, 1f).setEase(easeType);
+        LeanTween.cancel(gameObject);
+        LeanTween.move(gameObject, location, 2f); //.setEase(easeType);
         this.location = location;
         
     }

@@ -172,10 +172,9 @@ class ADAS:
 
     
     def inference(self, image):
-        #image = cv2.resize(image, (1280, 720))
+        #image = cv2.resize(image, (1280, 720))        
         image = image[self.height_offset:(self.height_offset+self.height), 0:self.width]        
         image, self.vehicle_offset = self.lane_lines.lane_detect(image)
-
         image = self.image_detect(image)
         #image = self.lane_lines.lane_detect(image)
 
@@ -208,6 +207,7 @@ while True:
         if cv2.waitKey(1) & 0xFF == ord("x"):
             cv2.destroyAllWindows()
             break
+
     except KeyboardInterrupt:
         cv2.destroyAllWindows()
         break

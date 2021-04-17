@@ -12,6 +12,8 @@ public class SteeringWheel : MonoBehaviour
 
     public Queue<float> angleWindow = new Queue<float>();
 
+    LeanTweenType easeType = LeanTweenType.easeInOutCubic;
+
     void Start()
     {
         
@@ -20,16 +22,7 @@ public class SteeringWheel : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-                
-        // LeanTween.cancel(steeringWheelRectTransform.gameObject);
-        // LeanTween.cancel(steeringWheelTransform.gameObject);
-
-        LeanTween.rotate(steeringWheelRectTransform.gameObject, new Vector3(0f, 0f, vehicleOffset * 40f), 1f).setEase(LeanTweenType.easeInOutCubic);
-        LeanTween.rotateLocal(steeringWheelTransform.gameObject, new Vector3(15f, 0f, vehicleOffset * 40f), 1f).setEase(LeanTweenType.easeInOutCubic);
-        //steeringWheelRectTransform.eulerAngles = new Vector3(0f, 0f, vehicleOffset * -50f);
-        //float steeringAngle = Mathf.Lerp(steeringWheelTransform.rotation.z, vehicleOffset * -50f, Time.deltaTime);
-        // float steeringAngle = LeanTween.easeInOutCubic(steeringWheelTransform.rotation.z, vehicleOffset * -50f, Time.deltaTime);
-        // steeringWheelTransform.rotation = Quaternion.EulerAngles(0f, 0f, steeringAngle);        
+    
     }
 
     void CalculateAverageVehicleOffset()
@@ -48,15 +41,13 @@ public class SteeringWheel : MonoBehaviour
         
         //CalculateAverageVehicleOffset();
 
-        this.vehicleOffset = vehicleOffset;
-        //steeringWheelRectTransform.eulerAngles = new Vector3(0f, 0f, vehicleOffset * -50f);
-        //LeanTween.rotateZ(steeringWheelRectTransform.gameObject, vehicleOffset * -50f, 0.1f);
+        this.vehicleOffset = vehicleOffset;        
         
-        // LeanTween.cancel(steeringWheelRectTransform.gameObject);
-        // LeanTween.cancel(steeringWheelTransform.gameObject);
+        LeanTween.cancel(steeringWheelRectTransform.gameObject);
+        LeanTween.cancel(steeringWheelTransform.gameObject);
 
-        // LeanTween.rotate(steeringWheelRectTransform.gameObject, new Vector3(0f, 0f, vehicleOffset * 400f), 1f);//.setEase(LeanTweenType.easeInOutCubic);
-        // LeanTween.rotateLocal(steeringWheelTransform.gameObject, new Vector3(15f, 0f, vehicleOffset * 400f), 1f);
+        LeanTween.rotateLocal(steeringWheelRectTransform.gameObject, new Vector3(0f, 0f, vehicleOffset * 40f), 2f).setEase(easeType);
+        LeanTween.rotateLocal(steeringWheelTransform.gameObject, new Vector3(15f, 0f, vehicleOffset * 40f), 2f).setEase(easeType);
         
     }
 }

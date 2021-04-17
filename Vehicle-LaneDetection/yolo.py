@@ -11,7 +11,7 @@ import os
 
 class cv_Yolo:
 
-    def __init__(self, yolo_path, confidence=0.0, threshold=.4):
+    def __init__(self, yolo_path, confidence=0.1, threshold=.2):
         self.confidence = confidence
         self.threshold = threshold
 
@@ -21,8 +21,8 @@ class cv_Yolo:
         np.random.seed(42)
         self.colors = np.random.randint(0,255, size=(len(self.labels), 3), dtype="uint8")
 
-        weights_path = os.path.sep.join([yolo_path, "yolov3.weights"])
-        cfg_path = os.path.sep.join([yolo_path, "yolov3.cfg"])
+        weights_path = os.path.sep.join([yolo_path, "yolov4.weights"])
+        cfg_path = os.path.sep.join([yolo_path, "yolov4.cfg"])
 
         self.net = cv2.dnn.readNetFromDarknet(cfg_path, weights_path)
 

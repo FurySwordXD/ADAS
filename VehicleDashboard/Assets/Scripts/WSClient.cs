@@ -45,6 +45,7 @@ public class WSClient : MonoBehaviour
     
         
     WebSocket ws;    
+    
     JSONRoot jsonData;
     //List<GameObject> spawnedVehicles = new List<GameObject>();
     public GameObject spawnedVehiclePrefab;
@@ -76,8 +77,7 @@ public class WSClient : MonoBehaviour
     void ParseData(string data)
     {
         jsonData = JsonUtility.FromJson<JSONRoot>(data);
-        
-        steeringWheel.UpdateParameters(jsonData.vehicle_offset);
+        UnityMainThreadDispatcher.Instance().Enqueue(() => Process());
     }
 
     float ConvertRange(float value, float oldMin, float oldMax, float minValue, float maxValue)
@@ -102,34 +102,40 @@ public class WSClient : MonoBehaviour
         UIScript.instance.SetSpeed(speed);
 
         // string test = "{\"objects\":[{\"class_label\":\"car\",\"center_x\":0.6125,\"center_y\":0.8111111111111111}]}";
-        // ParseData(test);
-        if (jsonData == null)
-            return;
+        // ParseData(test);   
 
-        List<int> keys = new List<int>(spawnedVehicles.Keys);
+        //Process();    
+    }
 
-        for (int key_idx = 0; key_idx < keys.Count; key_idx++) {
-            int key = keys[key_idx];
-            bool found = false;
-            for (int i = 0; i < jsonData.objects.Length; i++) {
-                if (jsonData.objects[i].id == key)
+    void Process()
+    {
+        //Debug.Log("Process");
+
+        try {
+            steeringWheel.UpdateParameters(jsonData.vehicle_offset);
+
+            List<int> keys = new List<int>(spawnedVehicles.Keys);
+
+            for (int key_idx = 0; key_idx < keys.Count; key_idx++) {
+                int key = keys[key_idx];
+                bool found = false;
+                for (int i = 0; i < jsonData.objects.Length; i++) {
+                    if (jsonData.objects[i].id == key)
+                    {
+                        found = true;
+                        break;
+                    }                    
+                }
+
+                if (!found)
                 {
-                    found = true;
-                    break;
-                }                    
+                    spawnedVehicles[key].Destroy();
+                    spawnedVehicles.Remove(key);
+                }                
             }
-
-            if (!found)
-            {
-                spawnedVehicles[key].Destroy();
-                spawnedVehicles.Remove(key);
-            }                
-        }
-
-        for (int i = 0; i < jsonData.objects.Length; i++)
-        {            
-            try
-            {
+        
+            for (int i = 0; i < jsonData.objects.Length; i++)
+            {            
                 DetectedObject o = jsonData.objects[i];
                 float x = ConvertRange(ConvertRange(o.center_x, 0, 1, -1, 1) * xCorrection, -1, 1, 0, 1) * fovCamera.pixelWidth;                                
                 float y = (1 - o.center_y) * fovCamera.pixelHeight * yCorrection;                
@@ -143,12 +149,13 @@ public class WSClient : MonoBehaviour
                 }
                 else
                     SpawnVehicle(o.id, location, o.class_label);
-            }
-            catch (Exception e)
-            {
-                Debug.Log(e);
-            }
-        }        
+            } 
+        }
+        catch (Exception e)
+        {
+            Debug.Log(e);
+        }
+
     }
 
     void DebugSpawn()
@@ -159,6 +166,7 @@ public class WSClient : MonoBehaviour
 
     Vector3 Get3DLocation(float x, float y)
     {
+        Debug.Log("Line");
         float distance = 100f;
         Ray ray = fovCamera.ScreenPointToRay(new Vector3(x, y, fovCamera.nearClipPlane));        
         RaycastHit hit;
@@ -176,8 +184,9 @@ public class WSClient : MonoBehaviour
 
     void SpawnVehicle(int id, Vector3 spawnLocation, string type = "")
     {
+        Debug.Log("Spawn");
         if (spawnLocation.magnitude > 0f)
-        {            
+        {                        
             // // Vehicle newVehicle = new Vehicle();
             //Vehicle newVehicle = Vehicle.SpawnVehicle(id, spawnedVehiclePrefab, spawnLocation, type);
             

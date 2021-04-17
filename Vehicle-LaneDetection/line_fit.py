@@ -34,7 +34,7 @@ class LineFit:
 		# src = np.float32([[int(width * .1), height], 	[int(width * .9), height], 	[int(width * .35), int(height * .3)], 	[int(width * .65), int(height * .3)]])
 		# dst = np.float32([[int(width * .2), height], 	[int(width * .8), height], [int(width * .2), 0], 					[int(width * .8), 0]])
 
-		src = np.float32([[int(width * .156), height], 	[int(width * .859), height], 	[int(width * .465), int(height * .325)], 	[int(width * .535), int(height * .325)]])
+		src = np.float32([[int(width * .156), height], 	[int(width * .859), height], 	[int(width * .465), int(height * .4)], 	[int(width * .535), int(height * .4)]])
 		dst = np.float32([[int(width * .234), height], 	[int(width * .765), height], 	[int(width * .234), 0], 					[int(width * .765), 0]])
 
 

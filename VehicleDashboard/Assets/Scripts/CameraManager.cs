@@ -21,7 +21,7 @@ public class CameraManager : MonoBehaviour
 
     void Start()
     {
-        StartCoroutine(ShowInterior());
+        StartCoroutine(ShowExterior());
     }
 
     void OnDestroy()
