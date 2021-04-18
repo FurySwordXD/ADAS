@@ -60,10 +60,12 @@ public class CameraManager : MonoBehaviour
 
         mainCamera.transform.position = dashCamera.transform.position;
         mainCamera.transform.rotation = dashCamera.transform.rotation;
+        Camera.main.fieldOfView = 70f;
 
         ScreenFade.instance.FadeIn();
         yield return new WaitForSeconds(0.25f);
 
+        
         LeanTween.move(mainCamera, carCamera.transform.position, .5f);
         LeanTween.rotate(mainCamera, carCamera.transform.eulerAngles, .5f);
 
@@ -90,7 +92,8 @@ public class CameraManager : MonoBehaviour
 
         mainCamera.transform.position = viewCamera.transform.position;
         mainCamera.transform.rotation = viewCamera.transform.rotation;
-        
+        Camera.main.fieldOfView = 60f;
+
         LeanTween.alphaCanvas(vehicleUI, 1f, .5f);
         ScreenFade.instance.FadeIn();
 

@@ -41,18 +41,25 @@ public class WSClient : MonoBehaviour
     public float yFinalCorrection = 1f;
 
 
+    public float rpm = 2500f;
     public float speed = 20f;
-    
+    public float vehicleOffset = 0f;
         
     WebSocket ws;    
     
     JSONRoot jsonData;
     //List<GameObject> spawnedVehicles = new List<GameObject>();
     public GameObject spawnedVehiclePrefab;
-    public Dictionary <int, Vehicle> spawnedVehicles = new Dictionary<int, Vehicle>();    
+    public Dictionary <int, Vehicle> spawnedVehicles = new Dictionary<int, Vehicle>();
 
-    public SteeringWheel steeringWheel;
+    public GameObject steeringWheel;    
 
+    public static WSClient instance;
+
+    void Awake()
+    {
+        instance = this;
+    }
 
     void Start()
     {        
@@ -99,7 +106,6 @@ public class WSClient : MonoBehaviour
     void Update()
     {
         RoadScrollTexture.instance.scrollSpeed = speed;
-        UIScript.instance.SetSpeed(speed);
 
         // string test = "{\"objects\":[{\"class_label\":\"car\",\"center_x\":0.6125,\"center_y\":0.8111111111111111}]}";
         // ParseData(test);   
@@ -112,7 +118,10 @@ public class WSClient : MonoBehaviour
         //Debug.Log("Process");
 
         try {
-            steeringWheel.UpdateParameters(jsonData.vehicle_offset);
+            vehicleOffset = jsonData.vehicle_offset;
+            //steeringWheel.UpdateParameters(jsonData.vehicle_offset);
+            LeanTween.cancel(steeringWheel);            
+            LeanTween.rotateLocal(steeringWheel, new Vector3(15f, 0f, vehicleOffset * 50f), 1f).setEase(LeanTweenType.easeInOutCubic);
 
             List<int> keys = new List<int>(spawnedVehicles.Keys);
 

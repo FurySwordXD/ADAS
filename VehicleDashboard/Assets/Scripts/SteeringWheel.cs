@@ -46,8 +46,8 @@ public class SteeringWheel : MonoBehaviour
         LeanTween.cancel(steeringWheelRectTransform.gameObject);
         LeanTween.cancel(steeringWheelTransform.gameObject);
 
-        LeanTween.rotateLocal(steeringWheelRectTransform.gameObject, new Vector3(0f, 0f, vehicleOffset * 40f), 2f).setEase(easeType);
-        LeanTween.rotateLocal(steeringWheelTransform.gameObject, new Vector3(15f, 0f, vehicleOffset * 40f), 2f).setEase(easeType);
+        LeanTween.rotateLocal(steeringWheelRectTransform.gameObject, new Vector3(0f, 0f, vehicleOffset * 50f), 1f).setEase(easeType);
+        LeanTween.rotateLocal(steeringWheelTransform.gameObject, new Vector3(15f, 0f, vehicleOffset * 50f), 1f).setEase(easeType);
         
     }
 }
