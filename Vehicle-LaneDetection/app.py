@@ -27,6 +27,10 @@ from grabscreen import grab_screen
 from sort import Sort
 from line_fit import LineFit
 
+import queue 
+import threading
+import copy
+
 class ADAS:
 
     def __init__(self):
@@ -56,7 +60,19 @@ class ADAS:
         self.lane_lines = LineFit(self.width, self.height - self.height_offset)
 
         self.detected_objects = []
-        self.vehicle_offset = 0.0
+        self.vehicle_offset = 0.0 
+
+        self.run = False           
+        self.t1 = threading.Thread(target=self.lane_detect_thread, args=())
+        self.t2 = threading.Thread(target=self.vehicle_detect_thread, args=())
+
+        self.lane_queue = queue.Queue(1)
+        self.vehicle_queue = queue.Queue(1)    
+
+        with open('calibrate_camera.p', 'rb') as f:
+            save_dict = pickle.load(f)
+            self.distortion_matrix = save_dict['mtx']
+            self.distortion = save_dict['dist']    
 
     def load_image(self, img_path):
         # image loading
@@ -68,18 +84,15 @@ class ADAS:
 
     #classes = ['person', 'bicycle', 'car', 'motorbike', 'bus', 'train', 'truck', 'traffic light', 'stop sign', ]
     def draw_box_labes(self, image, detections):    
-
-        
-        self.detected_objects = []
-
         d = []
-        
+        detected_objects = []
+
         for idx, detection in enumerate(detections):            
             x1, y1 = detection.box_2d[0]
             x2, y2 = detection.box_2d[1]
             label_index = self.yolo.labels.index(detection.detected_class)
             d.append([x1, y1, x2, y2, detection.score, label_index])
-        
+
         if len(d) > 0:
             d = np.array(d)
             tracked_objects = self.mot_tracker.update(d)
@@ -100,15 +113,15 @@ class ADAS:
                 cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)                        
                 cv2.putText(image, f"{self.yolo.labels[label_index]} {obj_id}", (x1, y1 + 10), cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 255, 255), 1)
                                 
-                self.detected_objects.append({
+                detected_objects.append({
                     'id': obj_id,
                     'class_label': self.yolo.labels[label_index],
                     'center_x': center_x / self.width,
                     'center_y': center_y / (self.height - self.height_offset),
-                })                        
+                })
 
-        
-
+        self.detected_objects = detected_objects
+    
 
     def project_point(self, point, height_offset):        
         pts = np.array([[point[0], point[1]-height_offset]], dtype = "float32")
@@ -125,9 +138,7 @@ class ADAS:
 
         return warped_img
 
-    def prepare_data(self, detections):
-        self.detected_objects = []
-
+    def prepare_data(self, detections):        
         for detection in detections:
             x1, y1 = detection.box_2d[0]
             x2, y2 = detection.box_2d[1]
@@ -136,8 +147,7 @@ class ADAS:
 
     def image_detect(self, image): 
                 
-        #image = cv2.resize(frame, (480, 480), interpolation=cv2.INTER_LINEAR)
-        self.detected_objects = []        
+        #image = cv2.resize(frame, (480, 480), interpolation=cv2.INTER_LINEAR)           
         #image = image[self.height_offset:(self.height_offset+self.height), 0:self.width] # ROI Crop        
 
         detections = self.yolo.detect(image)           
@@ -171,26 +181,106 @@ class ADAS:
         cv2.imshow("Image", masked_image)
 
     
+    def update_image_frame(self, image):
+        image = image[self.height_offset:(self.height_offset+self.height), 0:self.width]
+        self.image = cv2.undistort(image, self.distortion_matrix, self.distortion, None, self.distortion_matrix)        
+        #self.display("Initial", self.image)
+
+        try:
+            self.display("Lanes", self.lanes_image)
+            self.display("Vehicles", self.vehicles_image)
+            #print(json.dumps({'objects': self.detected_objects, 'vehicle_offset': self.vehicle_offset}), flush=True)
+        except:
+            pass
+
+        # try:
+        #     title, image = self.vehicle_queue.get(False) #doesn't block
+        #     print(title)
+        #     self.display(title, image)
+        # except queue.Empty: #raised when queue is empty
+        #     pass
+
+        # try:
+        #     title, image = self.lane_queue.get(False) #doesn't block
+        #     print(title)
+        #     self.display(title, image)
+        # except queue.Empty: #raised when queue is empty
+        #     pass
+
     def inference(self, image):
         #image = cv2.resize(image, (1280, 720))        
-        image = image[self.height_offset:(self.height_offset+self.height), 0:self.width]        
+        image = image[self.height_offset:(self.height_offset+self.height), 0:self.width]
+        image = cv2.undistort(image, self.distortion_matrix, self.distortion, None, self.distortion_matrix)
         image, self.vehicle_offset = self.lane_lines.lane_detect(image)
         image = self.image_detect(image)
-        #image = self.lane_lines.lane_detect(image)
+        #image = self.lane_lines.lane_detect(image)        
 
         print(json.dumps({'objects': self.detected_objects, 'vehicle_offset': self.vehicle_offset}), flush=True)
+        self.display("Result", image)        
 
-        self.display(image)
+    def output_result(self):
+        print(json.dumps({'objects': self.detected_objects, 'vehicle_offset': self.vehicle_offset}), flush=True)
 
-    def display(self, image):
+    def lane_detect_thread(self):
+        while self.run:
+            try:                
+                start = time.time()
+                image = copy.deepcopy(self.image)
+                image, self.vehicle_offset = self.lane_lines.lane_detect(image)
+
+                end = 1 / (time.time() - start)
+                label_str = 'FPS: %.1f' % end
+                image = cv2.putText(image, label_str, (0, 20), 0, .5, (255,255,255), 1, cv2.LINE_AA)
+                #print(f"Lane FPS: {str( 1 / (time.time() - start) )}")
+                #self.display("Lanes", image)
+                #self.lane_queue.put((title, image))
+
+                self.output_result()
+
+                self.lanes_image = image
+            except:
+                pass
+
+    def vehicle_detect_thread(self):
+        while self.run:
+            try:
+                start = time.time()
+
+                image = copy.deepcopy(self.image)
+                image = self.image_detect(image)                
+
+                end = 1 / (time.time() - start)
+                label_str = 'FPS: %.1f' % end
+                image = cv2.putText(image, label_str, (0, 20), 0, .5, (255,255,255), 1, cv2.LINE_AA)
+                #print(f"Vehicle FPS: {str( 1 / (time.time() - start) )}")
+                #self.display("Vehicles", image)
+                #self.vehicle_queue.put((title, image))
+                self.output_result()
+
+                self.vehicles_image = image
+            except:
+                pass
+
+    def display(self, title, image):                    
         #image = cv2.resize(image, (640, 360 - ))
-        cv2.imshow("Result", image)
+        cv2.imshow(title, image)
         #cv2.imshow('Display', canny)
 
+    def start_threads(self):
+        self.run = True
+        self.t1.start()
+        self.t2.start()
+
+    def stop_threads(self):
+        if self.run == True:
+            self.run = False
+            self.t1.join()
+            self.t2.join()
 
 #image, height, width, channels = load_image('road.jpg')
 
 adas = ADAS()
+adas.start_threads()
 
 while True:	
 
@@ -200,14 +290,16 @@ while True:
         y_offset = 250
         image = grab_screen((x_offset, y_offset, x_offset + adas.width, y_offset + adas.height))
         #image = cv2.resize(image, (288, 288))
-        adas.inference(image)
-        
+        adas.update_image_frame(image)
+        #adas.inference(image)
         #print(f"FPS: {str( 1 / (time.time() - start) )}")
 
         if cv2.waitKey(1) & 0xFF == ord("x"):
+            adas.stop_threads()
             cv2.destroyAllWindows()
             break
 
     except KeyboardInterrupt:
+        adas.stop_threads()
         cv2.destroyAllWindows()
         break

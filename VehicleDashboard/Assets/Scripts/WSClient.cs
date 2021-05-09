@@ -120,8 +120,11 @@ public class WSClient : MonoBehaviour
         try {
             vehicleOffset = jsonData.vehicle_offset;
             //steeringWheel.UpdateParameters(jsonData.vehicle_offset);
-            LeanTween.cancel(steeringWheel);            
-            LeanTween.rotateLocal(steeringWheel, new Vector3(15f, 0f, vehicleOffset * 50f), 1f).setEase(LeanTweenType.easeInOutCubic);
+            if (vehicleOffset != WSClient.instance.vehicleOffset)
+            {
+                LeanTween.cancel(steeringWheel);            
+                LeanTween.rotateLocal(steeringWheel, new Vector3(15f, 0f, vehicleOffset * 50f), .25f).setEase(LeanTweenType.easeInOutCubic);
+            }             
 
             List<int> keys = new List<int>(spawnedVehicles.Keys);
 

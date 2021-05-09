@@ -20,7 +20,7 @@ public class UIScript : MonoBehaviour
         {
             LeanTween.cancel(steeringWheel.gameObject);
             vehicleOffset = WSClient.instance.vehicleOffset;
-            LeanTween.rotateLocal(steeringWheel.gameObject, new Vector3(15f, 0f, vehicleOffset * 50f), 1f).setEase(LeanTweenType.easeInOutCubic);
+            LeanTween.rotateLocal(steeringWheel.gameObject, new Vector3(0f, 0f, vehicleOffset * 50f), .25f).setEase(LeanTweenType.easeInOutCubic);
         }        
     }
 }

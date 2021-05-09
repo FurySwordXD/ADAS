@@ -13,11 +13,6 @@ class LineFit:
 		self.xm_per_pix = 3.7/self.width/0.547
 		self.ym_per_pix = 30/self.height
 
-		with open('calibrate_camera.p', 'rb') as f:
-			save_dict = pickle.load(f)
-			self.distortion_matrix = save_dict['mtx']
-			self.distortion = save_dict['dist']
-
 		self.margin = 50
 
 	def perspective_transform(self, img):
@@ -426,8 +421,8 @@ class LineFit:
 
 	
 	def lane_detect(self, img):
-		try:            
-			undist = cv2.undistort(img, self.distortion_matrix, self.distortion, None, self.distortion_matrix)		
+		try:
+			undist = img
 			
 			img, abs_bin, mag_bin, dir_bin, hls_bin = self.combined_thresh(undist)
 			#cv2.imshow('lanes', img)

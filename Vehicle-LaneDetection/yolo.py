@@ -24,7 +24,12 @@ class cv_Yolo:
         weights_path = os.path.sep.join([yolo_path, "yolov4.weights"])
         cfg_path = os.path.sep.join([yolo_path, "yolov4.cfg"])
 
-        self.net = cv2.dnn.readNetFromDarknet(cfg_path, weights_path)
+        net = cv2.dnn.readNetFromDarknet(cfg_path, weights_path)
+        net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+        net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA_FP16)
+        self.net = net
+
+        print("CUDA: ", cv2.cuda.getCudaEnabledDeviceCount())
 
     def detect(self, image):
         # assert image is opencv
